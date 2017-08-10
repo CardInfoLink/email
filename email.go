@@ -16,6 +16,7 @@ import (
 	"mime"
 	"mime/multipart"
 	"mime/quotedprintable"
+	"net"
 	"net/mail"
 	"net/smtp"
 	"net/textproto"
@@ -383,7 +384,14 @@ func (e *Email) Send(addr string, a smtp.Auth) error {
 	if err != nil {
 		return err
 	}
-	return SendMailUsingTLS(addr, a, from.Address, to, raw)
+	err = SendMailUsingTLS(addr, a, from.Address, to, raw)
+	if err != nil {
+		if strings.Contains(err.Error(), "TLS handshake") {
+			fmt.Println("Trying smtp.SendMail")
+			err = smtp.SendMail(addr, a, from.Address, to, raw)
+		}
+	}
+	return err
 }
 
 // SendWithTLS sends an email with an optional TLS config.
